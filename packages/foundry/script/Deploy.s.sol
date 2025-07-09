@@ -1,25 +1,34 @@
-//SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "./DeployHelpers.s.sol";
-import { DeployYourContract } from "./DeployYourContract.s.sol";
+import {Script, console} from "forge-std/Script.sol";
+import {PostMint} from "../contracts/PostMint.sol";
+import {PostMintFactory} from "../contracts/PostMintFactory.sol";
 
-/**
- * @notice Main deployment script for all contracts
- * @dev Run this when you want to deploy multiple contracts at once
- *
- * Example: yarn deploy # runs this script(without`--file` flag)
- */
-contract DeployScript is ScaffoldETHDeploy {
+contract DeployScript is Script {
     function run() external {
-        // Deploys all your contracts sequentially
-        // Add new deployments here when needed
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        address deployer = vm.addr(deployerPrivateKey);
+        
+        console.log("Deploying contracts with the account:", deployer);
+        console.log("Account balance:", deployer.balance);
 
-        DeployYourContract deployYourContract = new DeployYourContract();
-        deployYourContract.run();
+        vm.startBroadcast(deployerPrivateKey);
 
-        // Deploy another contract
-        // DeployMyContract myContract = new DeployMyContract();
-        // myContract.run();
+        // Deploy PostMintFactory
+        PostMintFactory factory = new PostMintFactory();
+        console.log("PostMintFactory deployed to:", address(factory));
+
+        // Deploy a sample PostMint contract
+        PostMint postMint = new PostMint(deployer);
+        console.log("Sample PostMint deployed to:", address(postMint));
+
+        vm.stopBroadcast();
+        
+        // Save deployment addresses
+        console.log("=== Deployment Summary ===");
+        console.log("PostMintFactory:", address(factory));
+        console.log("Sample PostMint:", address(postMint));
+        console.log("Deployer:", deployer);
     }
 }
