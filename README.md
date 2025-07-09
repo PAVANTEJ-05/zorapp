@@ -1,80 +1,306 @@
-# 🏗 Scaffold-ETH 2
+# PostMint - Publish to Earn
 
-<h4 align="center">
-  <a href="https://docs.scaffoldeth.io">Documentation</a> |
-  <a href="https://scaffoldeth.io">Website</a>
-</h4>
+**A Web3-native publishing platform where every blog post becomes a tradeable coin, empowering creators to earn and supporters to invest in viral content.**
 
-🧪 An open-source, up-to-date toolkit for building decentralized applications (dapps) on the Ethereum blockchain. It's designed to make it easier for developers to create and deploy smart contracts and build user interfaces that interact with those contracts.
 
-⚙️ Built using NextJS, RainbowKit, Foundry, Wagmi, Viem, and Typescript.
 
-- ✅ **Contract Hot Reload**: Your frontend auto-adapts to your smart contract as you edit it.
-- 🪝 **[Custom hooks](https://docs.scaffoldeth.io/hooks/)**: Collection of React hooks wrapper around [wagmi](https://wagmi.sh/) to simplify interactions with smart contracts with typescript autocompletion.
-- 🧱 [**Components**](https://docs.scaffoldeth.io/components/): Collection of common web3 components to quickly build your frontend.
-- 🔥 **Burner Wallet & Local Faucet**: Quickly test your application with a burner wallet and local faucet.
-- 🔐 **Integration with Wallet Providers**: Connect to different wallet providers and interact with the Ethereum network.
+## 🌟 Overview
 
-![Debug Contracts tab](https://github.com/scaffold-eth/scaffold-eth-2/assets/55535804/b237af0c-5027-4849-a5c1-2e31495cccb1)
+PostMint transforms the traditional publishing model by enabling creators to monetize their content directly through blockchain technology. Built for the Zora Coinathon hackathon, PostMint leverages Zora's CoinV4 protocol to turn every blog post into a tradeable ERC-20 token on Base Sepolia testnet.
 
-## Requirements
+## 🔥 Problem Statement
 
-Before you begin, you need to install the following tools:
+Traditional publishing platforms like Medium, Substack, and Twitter extract all value from creators and give users no upside for their engagement:
 
-- [Node (>= v20.18.3)](https://nodejs.org/en/download/)
-- Yarn ([v1](https://classic.yarnpkg.com/en/docs/install/) or [v2+](https://yarnpkg.com/getting-started/install))
-- [Git](https://git-scm.com/downloads)
+- **Writers earn little** from their content
+- **Readers get nothing** for their loyalty or support
+- **Platforms win** by capturing all the value
+- **No direct creator-supporter relationship**
 
-## Quickstart
+## 💡 Solution
 
-To get started with Scaffold-ETH 2, follow the steps below:
+PostMint revolutionizes content monetization by:
 
-1. Install dependencies if it was skipped in CLI:
+- **Every post becomes a coin**: Each blog post is minted as a unique Zora CoinV4 token
+- **Direct support mechanism**: Readers mint coins to support writers directly
+- **Value appreciation**: Coin value increases as content gains popularity
+- **Creator royalties**: Authors earn from each mint and resale
+- **Supporter rewards**: Early supporters profit when content goes viral
 
+## 🛠 Tech Stack
+
+### Frontend & Development
+- **Next.js 14** - React framework with App Router
+- **Scaffold-ETH 2** - Full-stack dApp development template
+- **TailwindCSS** - Utility-first CSS framework
+- **DaisyUI** - Component library for Tailwind
+- **TypeScript** - Type-safe development
+
+### Web3 & Blockchain
+- **Zora Coins SDK** - Coin creation and management
+- **Zora CoinV4 Protocol** - Core tokenization infrastructure
+- **Base Sepolia** - Layer 2 deployment chain
+- **Wagmi** - React hooks for Ethereum
+- **Viem** - TypeScript Ethereum client
+- **RainbowKit** - Wallet connection interface
+
+### Storage & Infrastructure
+- **IPFS** - Decentralized content storage
+- **Vercel** - Frontend deployment platform
+- **Alchemy/Infura** - RPC providers
+
+## 🚀 Features
+
+### Core Functionality
+- **📝 Post Creation**: Rich text editor with image upload support
+- **🪙 Coin Minting**: Automatic ERC-20 token creation for each post
+- **💰 Trading Interface**: Buy, sell, and trade post coins
+- **📊 Analytics Dashboard**: Creator earnings and engagement metrics
+- **🔍 Content Discovery**: Explore trending and valuable posts
+- **💬 Community Features**: Comments and supporter leaderboards
+
+### Advanced Features
+- **🎭 Creator Profiles**: Integrated Zora testnet profiles
+- **📈 Market Analytics**: Real-time coin performance tracking
+- **🔄 Multi-source Search**: Comprehensive coin discovery
+- **💾 Local Caching**: Persistent coin storage
+- **🎯 Manual Coin Addition**: Direct contract address support
+
+## 📦 Installation
+
+### Prerequisites
+- Node.js 18+ and Yarn
+- Git
+- MetaMask or compatible Web3 wallet
+- Base Sepolia testnet ETH
+
+### Setup Steps
+
+1. **Clone the repository**
+```bash
+git clone https://github.com/yourusername/postmint.git
+cd postmint
 ```
-cd my-dapp-example
+
+2. **Install dependencies**
+```bash
 yarn install
 ```
 
-2. Run a local network in the first terminal:
-
-```
-yarn chain
-```
-
-This command starts a local Ethereum network using Foundry. The network runs on your local machine and can be used for testing and development. You can customize the network configuration in `packages/foundry/foundry.toml`.
-
-3. On a second terminal, deploy the test contract:
-
-```
-yarn deploy
+3. **Configure environment variables**
+```bash
+cp packages/nextjs/.env.example packages/nextjs/.env.local
 ```
 
-This command deploys a test smart contract to the local network. The contract is located in `packages/foundry/contracts` and can be modified to suit your needs. The `yarn deploy` command uses the deploy script located in `packages/foundry/script` to deploy the contract to the network. You can also customize the deploy script.
-
-4. On a third terminal, start your NextJS app:
-
+4. **Set up environment variables**
+```env
+NEXT_PUBLIC_ZORA_API_KEY=your_zora_api_key_here
+NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=your_walletconnect_project_id
+NEXT_PUBLIC_CHAIN_ID=84532
 ```
-yarn start
+
+5. **Start the development server**
+```bash
+yarn dev
 ```
 
-Visit your app on: `http://localhost:3000`. You can interact with your smart contract using the `Debug Contracts` page. You can tweak the app config in `packages/nextjs/scaffold.config.ts`.
+## 🌐 Network Configuration
 
-Run smart contract test with `yarn foundry:test`
+PostMint is configured for **Base Sepolia Testnet**:
 
-- Edit your smart contracts in `packages/foundry/contracts`
-- Edit your frontend homepage at `packages/nextjs/app/page.tsx`. For guidance on [routing](https://nextjs.org/docs/app/building-your-application/routing/defining-routes) and configuring [pages/layouts](https://nextjs.org/docs/app/building-your-application/routing/pages-and-layouts) checkout the Next.js documentation.
-- Edit your deployment scripts in `packages/foundry/script`
+- **Network**: Base Sepolia
+- **Chain ID**: 84532
+- **Currency**: ETH (not ZORA on testnet)
+- **RPC URL**: https://sepolia.base.org
+- **Block Explorer**: https://sepolia.basescan.org
+
+### Getting Testnet ETH
+Visit the [Base Sepolia Faucet](https://www.coinbase.com/faucets/base-ethereum-sepolia-faucet) to get free testnet ETH for transactions.
+
+## 📖 Usage Guide
+
+### Creating Your First Post
+
+1. **Connect Your Wallet**
+   - Click "Connect Wallet" in the top navigation
+   - Select MetaMask or your preferred wallet
+   - Switch to Base Sepolia testnet if prompted
+
+2. **Create a Blog Post**
+   - Navigate to the home page
+   - Fill in the post title, description, and content
+   - Upload a featured image (required)
+   - Click "🚀 Create Blog Post Coin"
+
+3. **Confirm Transaction**
+   - Approve the transaction in your wallet
+   - Wait for confirmation (usually 1-2 seconds on testnet)
+   - Your post is now minted as an ERC-20 token!
+
+### Managing Your Posts
+
+1. **View Dashboard**
+   - Navigate to `/dashboard`
+   - See all your created posts and their performance
+   - View earnings and market statistics
+
+2. **Check Your Profile**
+   - Click your profile in the dashboard
+   - View your creator profile on Zora testnet
+   - Share your profile with supporters
+
+### Supporting Creators
+
+1. **Discover Posts**
+   - Browse the `/explore` page
+   - Filter by new, valuable, or trending posts
+   - Find creators and content you want to support
+
+2. **Buy Post Coins**
+   - Click on any post to view details
+   - Use the trading interface to buy coins
+   - Support creators directly through purchases
+
+## 🏗 Architecture
+
+### Smart Contract Layer
+- **Zora CoinV4 Contracts**: Core token functionality
+- **PostMint Contract**: Custom logic for post management
+- **ERC-20 Standard**: Each post becomes a standard token
+
+### Frontend Architecture
+```
+app/
+├── page.tsx              # Main post creation page
+├── dashboard/
+│   └── page.tsx         # Creator dashboard
+├── explore/
+│   └── page.tsx         # Content discovery
+├── post/
+│   └── [id]/
+│       └── page.tsx     # Individual post view
+└── components/
+    └── PostMint/        # Custom components
+```
+
+### Data Flow
+1. **User creates post** → Metadata uploaded to IPFS
+2. **Zora SDK processes** → ERC-20 token minted
+3. **Transaction confirmed** → Post appears in dashboard
+4. **Users discover** → Can buy/trade coins
+5. **Creator earns** → Royalties from trading activity
+
+## 🚦 Deployment
+
+### Testnet Deployment
+
+1. **Deploy to Vercel**
+```bash
+cd packages/nextjs
+vercel --prod
+```
+
+2. **Configure Environment Variables**
+   - Add all environment variables in Vercel dashboard
+   - Ensure Zora API key is properly set
+
+3. **Test Deployment**
+   - Verify wallet connection works
+   - Test post creation and coin minting
+   - Check all page routes function correctly
+
+### Production Considerations
+
+For mainnet deployment:
+- Switch to Base Mainnet configuration
+- Use production RPC endpoints
+- Implement proper error monitoring
+- Add rate limiting for API calls
+
+## 🎯 Hackathon Compliance
+
+PostMint meets all Zora Coinathon criteria:
+
+| Criteria | Implementation |
+|----------|----------------|
+| **Originality** | ✅ Unique tokenization of written content with supporter investment model |
+| **Utility** | ✅ Solves real creator monetization problems with direct value exchange |
+| **Zora Integration** | ✅ Uses Zora CoinV4 SDK for minting, metadata, and trading |
+| **Polish** | ✅ Professional UI with Scaffold-ETH 2, comprehensive features, and smooth UX |
+
+## 🔧 Development
+
+### Local Development
+```bash
+# Start development server
+yarn dev
+
+# Run type checking
+yarn type-check
+
+# Build for production
+yarn build
+```
+
+### Testing
+```bash
+# Test components
+yarn test
+
+# Test smart contracts (if applicable)
+yarn test:contracts
+```
+
+### Code Quality
+- ESLint configuration for code standards
+- TypeScript for type safety
+- Prettier for code formatting
+- Husky for pre-commit hooks
+
+## 🤝 Contributing
+
+1. **Fork the repository**
+2. **Create a feature branch**
+   ```bash
+   git checkout -b feature/amazing-feature
+   ```
+3. **Commit your changes**
+   ```bash
+   git commit -m 'Add amazing feature'
+   ```
+4. **Push to branch**
+   ```bash
+   git push origin feature/amazing-feature
+   ```
+5. **Open a Pull Request**
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+**Wallet Connection Issues**
+- Ensure you're on Base Sepolia testnet
+- Check that you have testnet ETH for gas fees
+- Try refreshing the page and reconnecting
+
+**Post Creation Fails**
+- Verify image file size is under 10MB
+- Check that all required fields are filled
+- Ensure you have sufficient gas fees
+
+**Dashboard Not Showing Posts**
+- Posts may take time to appear in search results
+- Use the manual add feature with your contract address
+- Check that you're connected to the correct wallet
 
 
-## Documentation
+## 📄 License
 
-Visit our [docs](https://docs.scaffoldeth.io) to learn how to start building with Scaffold-ETH 2.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-To know more about its features, check out our [website](https://scaffoldeth.io).
+## 🙏 Acknowledgments
 
-## Contributing to Scaffold-ETH 2
-
-We welcome contributions to Scaffold-ETH 2!
-
-Please see [CONTRIBUTING.MD](https://github.com/scaffold-eth/scaffold-eth-2/blob/main/CONTRIBUTING.md) for more information and guidelines for contributing to Scaffold-ETH 2.
+- **Zora Protocol** for the innovative CoinV4 infrastructure
+- **Scaffold-ETH 2** for the excellent development framework
+- **Base Network** for reliable Layer 2 infrastructure
+- **The Ethereum Community** for building the foundation of Web3
