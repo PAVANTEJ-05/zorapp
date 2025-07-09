@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { getCoinsLastTraded, getCoinsMostValuable, getCoinsNew, setApiKey } from "@zoralabs/coins-sdk";
 import { formatEther } from "viem";
 import { useAccount } from "wagmi";
@@ -65,7 +66,7 @@ export default function ExplorePage() {
       {
         id: "new",
         label: "🆕 New Coins",
-        fetchFunction: () => getCoinsNew({ count: 20 }) as Promise<ExploreListResponse>,
+        fetchFunction: () => getCoinsNew({ count: 200 }) as Promise<ExploreListResponse>,
       },
       {
         id: "valuable",
@@ -153,7 +154,7 @@ export default function ExplorePage() {
                   <strong>Symbol:</strong> {c.symbol}
                 </p>
                 <p className="text-sm opacity-70 mb-4">
-                  <strong>Creator:</strong> {`${c.creatorAddress.slice(0, 6)}…${c.creatorAddress.slice(-4)}`}
+                  <strong>Creator:</strong> {`${c.creatorAddress}`}
                 </p>
 
                 <div className="stats stats-vertical shadow bg-base-200">
@@ -172,8 +173,13 @@ export default function ExplorePage() {
                 </div>
 
                 <div className="card-actions justify-end mt-4 gap-2">
-                  <button className="btn btn-outline btn-sm">📖 View Post</button>
-                  <button className="btn btn-primary btn-sm">💰 Trade</button>
+                  <Link href={`/post/${c.address}`} target="_blank">
+                    <button className="btn btn-outline btn-sm">📖 View Post </button>{" "}
+                  </Link>
+                  <Link href={`https://zora.co/collect/zora:${c.address} `} target="_blank">
+                    {" "}
+                    <button className="btn btn-primary btn-sm">💰 Trade</button>
+                  </Link>
                 </div>
               </div>
             </div>

@@ -218,13 +218,11 @@ export default function PostDetailPage() {
               <div className="flex items-center gap-4 mb-6">
                 <div className="avatar placeholder">
                   <div className="bg-neutral text-neutral-content rounded-full w-12">
-                    <span className="text-xl">{coinData.creatorAddress.slice(2, 4).toUpperCase()}</span>
+                    <span className="text-2xl mx-3 my-3">{coinData.creatorAddress.slice(2, 4).toUpperCase()}</span>
                   </div>
                 </div>
                 <div>
-                  <p className="font-semibold">
-                    Creator: {coinData.creatorAddress.slice(0, 6)}...{coinData.creatorAddress.slice(-4)}
-                  </p>
+                  <p className="font-semibold">Creator: {coinData.creatorAddress}</p>
                   <p className="text-sm opacity-70">
                     {coinData.createdAt ? new Date(coinData.createdAt).toLocaleDateString() : "Unknown date"}
                   </p>
@@ -234,8 +232,8 @@ export default function PostDetailPage() {
                 )}
               </div>
 
-              <div className="prose max-w-none mb-6">
-                <div className="whitespace-pre-wrap">
+              <div className="prose max-w-none mb-6 bg-base-200 rounded-xl">
+                <div className="whitespace-pre-wrap mx-10 my-7 text-accent-content justify-items-center">
                   {coinData.description || "No description available for this post."}
                 </div>
               </div>
@@ -303,7 +301,7 @@ export default function PostDetailPage() {
               <h3 className="card-title">🎯 Actions</h3>
               <div className="space-y-2">
                 <a
-                  href={`https://zora.co/collect/base-sepolia:${coinData.address}`}
+                  href={`https://testnet.zora.co/coin/bsep:${coinData.address}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn btn-primary w-full"
@@ -336,7 +334,9 @@ export default function PostDetailPage() {
                 >
                   📋 Copy Link
                 </button>
-                <button className="btn btn-outline w-full">🐦 Share on X</button>
+                <Link href={`https://x.com`} target="_blank">
+                  <button className="btn btn-outline w-full">🐦 Share on X</button>
+                </Link>
               </div>
             </div>
           </div>

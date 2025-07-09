@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   DeployCurrency,
   createCoin,
@@ -21,7 +22,7 @@ if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_ZORA_API_KEY) {
 interface BlogPost {
   title: string;
   content: string;
-  description: string;
+  symbol: string;
 }
 
 interface CoinCreationResult {
@@ -37,7 +38,7 @@ export default function PostMintHome() {
   const [blogPost, setBlogPost] = useState<BlogPost>({
     title: "",
     content: "",
-    description: "",
+    symbol: "",
   });
   const [isCreating, setIsCreating] = useState(false);
   const [createdCoin, setCreatedCoin] = useState<CoinCreationResult | null>(null);
@@ -110,13 +111,8 @@ export default function PostMintHome() {
       // Create metadata using Zora's metadata builder (from documentation)
       const { createMetadataParameters } = await createMetadataBuilder()
         .withName(blogPost.title.trim())
-        .withSymbol(
-          blogPost.title
-            .slice(0, 5)
-            .toUpperCase()
-            .replace(/[^A-Z]/g, "") || "POST",
-        )
-        .withDescription(blogPost.description.trim() || blogPost.content.slice(0, 200).trim())
+        .withSymbol(blogPost.symbol || "POST")
+        .withDescription(blogPost.content.trim() || "NO CONTENT")
         .withImage(imageFile)
         .upload(createZoraUploaderForCreator(connectedAddress as Address));
 
@@ -150,7 +146,7 @@ export default function PostMintHome() {
       notification.success("🎉 Blog post coin created successfully!");
 
       // Reset form
-      setBlogPost({ title: "", content: "", description: "" });
+      setBlogPost({ title: "", content: "", symbol: "" });
       setImageFile(null);
     } catch (error: any) {
       console.error("Error creating coin:", error);
@@ -186,26 +182,6 @@ export default function PostMintHome() {
       <div className="px-5 w-full max-w-4xl">
         <h1 className="text-4xl font-bold text-center mb-8">📝 PostMint - Publish to Earn</h1>
 
-        {/* Network Status for Base Sepolia */}
-        <div className="bg-warning/10 border border-warning rounded-3xl p-6 mb-8">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🌐</span>
-            <div>
-              <h3 className="font-semibold text-warning">Network: Base Sepolia Testnet</h3>
-              <p className="text-sm opacity-70">Make sure your wallet is connected to Base Sepolia (Chain ID: 84532)</p>
-              <p className="text-sm opacity-70">Currency: ETH (ZORA not supported on Base Sepolia)</p>
-              <a
-                href="https://www.coinbase.com/faucets/base-ethereum-sepolia-faucet"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm link link-primary"
-              >
-                Need testnet ETH? Get it from the Base Sepolia faucet
-              </a>
-            </div>
-          </div>
-        </div>
-
         <div className="bg-base-100 rounded-3xl shadow-lg p-8 mb-8">
           <h2 className="text-2xl font-semibold mb-6">Create Your Blog Post Coin</h2>
 
@@ -227,17 +203,17 @@ export default function PostMintHome() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Description</label>
+              <label className="block text-sm font-medium mb-2">symbol</label>
               <input
                 type="text"
-                name="description"
-                value={blogPost.description}
+                name="symbol"
+                value={blogPost.symbol}
                 onChange={handleInputChange}
                 className="input input-bordered w-full"
-                placeholder="Brief description of your post"
-                maxLength={200}
+                placeholder="Symbol for your post"
+                maxLength={10}
               />
-              <div className="text-xs opacity-60 mt-1">{blogPost.description.length}/200 characters</div>
+              <div className="text-xs opacity-60 mt-1">{blogPost.symbol.length}/10 characters</div>
             </div>
 
             <div>
@@ -270,7 +246,7 @@ export default function PostMintHome() {
                 name="content"
                 value={blogPost.content}
                 onChange={handleInputChange}
-                className="textarea textarea-bordered w-full h-40"
+                className="textarea textarea-bordered  rounded-3xl w-full h-40"
                 placeholder="Write your blog post content here..."
                 maxLength={5000}
               />
@@ -315,22 +291,29 @@ export default function PostMintHome() {
                 <strong>Network:</strong> Base Sepolia Testnet
               </p>
               <div className="mt-4 flex gap-2 flex-wrap">
-                <a
+                <Link
                   href={`https://sepolia.basescan.org/tx/${createdCoin.hash}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn btn-sm btn-outline btn-success"
                 >
-                  View Transaction
-                </a>
-                <a
+                  📜 View Transaction
+                </Link>
+                <Link
                   href={`https://sepolia.basescan.org/address/${createdCoin.address}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn btn-sm btn-outline btn-info"
+                  className="btn btn-sm btn-outline btn-success"
                 >
-                  View Coin Contract
-                </a>
+                  🛈 View Coin Contract
+                </Link>
+                <Link
+                  href={`/post/${createdCoin.address}`}
+                  rel="noopener noreferrer"
+                  className="btn btn-sm btn-outline btn-success"
+                >
+                  🖼 View Post
+                </Link>
               </div>
             </div>
           </div>

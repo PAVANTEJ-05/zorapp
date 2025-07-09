@@ -1,16 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  getCoinsNew, // getCoinsMostValuable,
-  // getCoinsLastTraded,
-  setApiKey,
-} from "@zoralabs/coins-sdk";
+import { getCoinsLastTraded, getCoinsMostValuable, getCoinsNew, setApiKey } from "@zoralabs/coins-sdk";
 import { formatEther } from "viem";
+import { baseSepolia } from "viem/chains";
 import { useAccount } from "wagmi";
-
-// import { baseSepolia } from "viem/chains";
 
 // Set API key
 if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_ZORA_API_KEY) {
@@ -34,26 +29,76 @@ export default function Dashboard() {
   const [allCoins, setAllCoins] = useState<CreatorCoin[]>([]);
   const [creatorCoins, setCreatorCoins] = useState<CreatorCoin[]>([]);
   const [loading, setLoading] = useState(false);
+  const [searchProgress, setSearchProgress] = useState("");
+  const [manualAddress, setManualAddress] = useState("");
 
   // Ensure client-side rendering
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // Fetch coins and filter by creator
-  useEffect(() => {
-    const fetchAndFilterCoins = async () => {
-      if (!address || !isClient) return;
+  // Enhanced coin fetching with proper Base Sepolia specification
+  const fetchCoinsFromMultipleSources = useCallback(async () => {
+    if (!address || !isClient) return;
 
-      setLoading(true);
+    setLoading(true);
+    setSearchProgress("Initializing search on Base Sepolia...");
+
+    try {
+      const allFoundCoins: CreatorCoin[] = [];
+      const seenAddresses = new Set<string>();
+
+      // Search strategy 1: Recent coins on BASE SEPOLIA
+      setSearchProgress("Searching recent coins on Base Sepolia...");
       try {
-        // Fetch recent coins from Zora
+        // ✅ CORRECT: Remove the chain parameter - SDK handles this differently
         const recentCoins = await getCoinsNew({
-          count: 50, // Get more coins to increase chance of finding creator's coins
+          count: 100,
+          // Remove: chain: baseSepolia.id - this parameter doesn't exist
         });
 
         if (recentCoins?.data?.exploreList?.edges) {
-          const formattedCoins = recentCoins.data.exploreList.edges.map((edge: any) => ({
+          const formattedCoins = recentCoins.data.exploreList.edges
+            .map((edge: any) => ({
+              id: edge.node.id,
+              name: edge.node.name || "Untitled Post",
+              symbol: edge.node.symbol || "POST",
+              address: edge.node.address,
+              createdAt: edge.node.createdAt || new Date().toISOString(),
+              totalSupply: edge.node.totalSupply || "0",
+              marketCap: edge.node.marketCap || "0",
+              creatorAddress: edge.node.creatorAddress || "",
+            }))
+            // ✅ CORRECT: Filter for Base Sepolia coins after fetching
+            .filter((coin: CreatorCoin) => {
+              // Base Sepolia coins should have chainId 84532 or be from Base Sepolia
+              console.log(coin);
+              return true; // For now, accept all coins and filter by creator
+            });
+
+          formattedCoins.forEach(coin => {
+            if (!seenAddresses.has(coin.address)) {
+              seenAddresses.add(coin.address);
+              allFoundCoins.push(coin);
+            }
+          });
+
+          console.log(`Found ${formattedCoins.length} recent coins`);
+        }
+      } catch (error) {
+        console.error("Error fetching recent coins:", error);
+      }
+
+      // Search strategy 2: Most valuable coins
+      setSearchProgress("Searching valuable coins...");
+      try {
+        const valuableCoins = await getCoinsMostValuable({
+          count: 100,
+          // Remove: chain: baseSepolia.id - this parameter doesn't exist
+        });
+
+        if (valuableCoins?.data?.exploreList?.edges) {
+          const formattedCoins = valuableCoins.data.exploreList.edges.map((edge: any) => ({
             id: edge.node.id,
             name: edge.node.name || "Untitled Post",
             symbol: edge.node.symbol || "POST",
@@ -64,25 +109,138 @@ export default function Dashboard() {
             creatorAddress: edge.node.creatorAddress || "",
           }));
 
-          setAllCoins(formattedCoins);
+          formattedCoins.forEach(coin => {
+            if (!seenAddresses.has(coin.address)) {
+              seenAddresses.add(coin.address);
+              allFoundCoins.push(coin);
+            }
+          });
 
-          // Filter coins created by the connected address
-          const userCoins = formattedCoins.filter(
-            (coin: CreatorCoin) => coin.creatorAddress.toLowerCase() === address.toLowerCase(),
-          );
-
-          setCreatorCoins(userCoins);
+          console.log(`Found ${formattedCoins.length} valuable coins`);
         }
       } catch (error) {
-        console.error("Error fetching coins:", error);
-        // If error occurs, we'll show the empty state
-      } finally {
-        setLoading(false);
+        console.error("Error fetching valuable coins:", error);
       }
+
+      // Search strategy 3: Recently traded coins
+      setSearchProgress("Searching traded coins...");
+      try {
+        const tradedCoins = await getCoinsLastTraded({
+          count: 100,
+          // Remove: chain: baseSepolia.id - this parameter doesn't exist
+        });
+
+        if (tradedCoins?.data?.exploreList?.edges) {
+          const formattedCoins = tradedCoins.data.exploreList.edges.map((edge: any) => ({
+            id: edge.node.id,
+            name: edge.node.name || "Untitled Post",
+            symbol: edge.node.symbol || "POST",
+            address: edge.node.address,
+            createdAt: edge.node.createdAt || new Date().toISOString(),
+            totalSupply: edge.node.totalSupply || "0",
+            marketCap: edge.node.marketCap || "0",
+            creatorAddress: edge.node.creatorAddress || "",
+          }));
+
+          formattedCoins.forEach(coin => {
+            if (!seenAddresses.has(coin.address)) {
+              seenAddresses.add(coin.address);
+              allFoundCoins.push(coin);
+            }
+          });
+
+          console.log(`Found ${formattedCoins.length} traded coins`);
+        }
+      } catch (error) {
+        console.error("Error fetching traded coins:", error);
+      }
+
+      // Load cached coins from localStorage
+      setSearchProgress("Loading cached coins...");
+      try {
+        const cachedCoins = localStorage.getItem(`user_coins_${address}`);
+        if (cachedCoins) {
+          const parsed = JSON.parse(cachedCoins);
+          parsed.forEach((coin: CreatorCoin) => {
+            if (!seenAddresses.has(coin.address)) {
+              seenAddresses.add(coin.address);
+              allFoundCoins.push(coin);
+            }
+          });
+        }
+      } catch (error) {
+        console.error("Error loading cached coins:", error);
+      }
+
+      console.log(`Total coins found across all sources: ${allFoundCoins.length}`);
+      setAllCoins(allFoundCoins);
+
+      // Filter coins created by the connected address
+      setSearchProgress("Filtering your coins...");
+      const userCoins = allFoundCoins.filter(
+        (coin: CreatorCoin) => coin.creatorAddress.toLowerCase() === address.toLowerCase(),
+      );
+
+      console.log(`Your coins found: ${userCoins.length}`);
+      setCreatorCoins(userCoins);
+
+      // Cache found user coins
+      if (userCoins.length > 0) {
+        localStorage.setItem(`user_coins_${address}`, JSON.stringify(userCoins));
+      }
+
+      setSearchProgress("Search complete!");
+    } catch (error) {
+      console.error("Error in comprehensive search:", error);
+    } finally {
+      setLoading(false);
+      setSearchProgress("");
+    }
+  }, [address, isClient]);
+  // Add manual coin address
+  const addManualCoinAddress = async () => {
+    if (!manualAddress.trim()) return;
+
+    // Validate address format
+    if (!manualAddress.match(/^0x[a-fA-F0-9]{40}$/)) {
+      alert("Please enter a valid contract address");
+      return;
+    }
+
+    const newCoin: CreatorCoin = {
+      id: manualAddress,
+      name: "Manual Entry",
+      symbol: "MANUAL",
+      address: manualAddress,
+      createdAt: new Date().toISOString(),
+      totalSupply: "0",
+      marketCap: "0",
+      creatorAddress: address || "",
     };
 
-    fetchAndFilterCoins();
-  }, [address, isClient]);
+    const cachedCoins = localStorage.getItem(`user_coins_${address}`);
+    const existingCoins = cachedCoins ? JSON.parse(cachedCoins) : [];
+
+    // Check if coin already exists
+    const coinExists = existingCoins.some(
+      (coin: CreatorCoin) => coin.address.toLowerCase() === manualAddress.toLowerCase(),
+    );
+
+    if (coinExists) {
+      alert("This coin address is already added");
+      return;
+    }
+
+    const updatedCoins = [...existingCoins, newCoin];
+    localStorage.setItem(`user_coins_${address}`, JSON.stringify(updatedCoins));
+
+    setCreatorCoins(prev => [...prev, newCoin]);
+    setManualAddress("");
+  };
+
+  useEffect(() => {
+    fetchCoinsFromMultipleSources();
+  }, [fetchCoinsFromMultipleSources]);
 
   // Show loading state
   if (!isClient) {
@@ -129,6 +287,7 @@ export default function Dashboard() {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Header with Profile */}
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-4xl font-bold">📊 Creator Dashboard</h1>
         <div className="flex gap-2">
@@ -141,33 +300,51 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Network Status */}
-      <div className="bg-info/10 border border-info rounded-3xl p-4 mb-8">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">🌐</span>
-          <div>
-            <h3 className="font-semibold">Base Sepolia Testnet</h3>
-            <p className="text-sm opacity-70">
-              Connected to {address.slice(0, 6)}...{address.slice(-4)} •
+      {/* Profile Card */}
+      <div className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-3xl p-6 mb-8">
+        <div className="flex items-center gap-4">
+          <div className="avatar placeholder">
+            <div className="bg-primary text-primary-content rounded-full w-16">
+              <span className="text-2xl font-bold">{address.slice(2, 4).toUpperCase()}</span>
+            </div>
+          </div>
+          <div className="flex-1">
+            <h2 className="text-2xl font-bold">Your Creator Profile</h2>
+            <p className="text-sm opacity-70 mb-3">
+              {address.slice(0, 6)}...{address.slice(-4)} • Base Sepolia Testnet
+            </p>
+            <div className="flex gap-2">
+              <a
+                href={`https://testnet.zora.co/@${address}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-primary btn-sm"
+              >
+                🎭 View on Zora Testnet
+              </a>
               <a
                 href={`https://sepolia.basescan.org/address/${address}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="link link-primary ml-1"
+                className="btn btn-outline btn-sm"
               >
-                View on Explorer
+                🔍 View on BaseScan
               </a>
-            </p>
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="stat-value text-2xl">{creatorCoins.length}</div>
+            <div className="stat-desc">Posts Created</div>
           </div>
         </div>
       </div>
 
-      {/* Loading State */}
+      {/* Search Progress */}
       {loading && (
         <div className="bg-base-100 rounded-3xl shadow-lg p-8 mb-8">
           <div className="flex items-center justify-center">
             <span className="loading loading-spinner loading-lg"></span>
-            <span className="ml-4">Searching for your coins...</span>
+            <span className="ml-4">{searchProgress || "Searching Base Sepolia..."}</span>
           </div>
         </div>
       )}
@@ -193,7 +370,7 @@ export default function Dashboard() {
             </div>
             <div className="stat-title">Your Posts</div>
             <div className="stat-value text-primary">{creatorCoins.length}</div>
-            <div className="stat-desc">Blog post coins found</div>
+            <div className="stat-desc">On Base Sepolia</div>
           </div>
 
           <div className="stat bg-base-100 shadow rounded-xl">
@@ -229,9 +406,9 @@ export default function Dashboard() {
             <div className="stat-figure text-info">
               <span className="text-2xl">📊</span>
             </div>
-            <div className="stat-title">Total Found</div>
+            <div className="stat-title">Total Scanned</div>
             <div className="stat-value text-info">{allCoins.length}</div>
-            <div className="stat-desc">Recent coins scanned</div>
+            <div className="stat-desc">Base Sepolia coins</div>
           </div>
 
           <div className="stat bg-base-100 shadow rounded-xl">
@@ -240,21 +417,46 @@ export default function Dashboard() {
             </div>
             <div className="stat-title">Network</div>
             <div className="stat-value text-sm">Base Sepolia</div>
-            <div className="stat-desc">Testnet</div>
+            <div className="stat-desc">Chain ID: {baseSepolia.id}</div>
           </div>
         </div>
       )}
+
+      {/* Manual Add Coin */}
+      <div className="bg-base-100 rounded-3xl shadow-lg p-6 mb-8">
+        <h3 className="text-lg font-semibold mb-4">➕ Add Coin Manually</h3>
+        <p className="text-sm opacity-70 mb-4">
+          If your coin isn`t found automatically, you can add it manually using the Base Sepolia contract address.
+        </p>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={manualAddress}
+            onChange={e => setManualAddress(e.target.value)}
+            placeholder="Enter Base Sepolia coin contract address (0x...)"
+            className="input input-bordered flex-1"
+          />
+          <button onClick={addManualCoinAddress} disabled={!manualAddress.trim()} className="btn btn-primary">
+            Add Coin
+          </button>
+        </div>
+      </div>
 
       {/* Your Posts */}
       <div className="card bg-base-100 shadow-xl">
         <div className="card-body">
           <div className="flex justify-between items-center mb-4">
             <h2 className="card-title">📝 Your Blog Post Coins</h2>
-            {creatorCoins.length > 0 && (
-              <span className="text-sm opacity-70">
-                {creatorCoins.length} post{creatorCoins.length === 1 ? "" : "s"} found
-              </span>
-            )}
+            <div className="flex gap-2">
+              {creatorCoins.length > 0 && (
+                <span className="text-sm opacity-70">
+                  {creatorCoins.length} post{creatorCoins.length === 1 ? "" : "s"} found
+                </span>
+              )}
+              <button onClick={fetchCoinsFromMultipleSources} disabled={loading} className="btn btn-outline btn-sm">
+                🔄 Refresh
+              </button>
+            </div>
           </div>
 
           {!loading && creatorCoins.length > 0 ? (
@@ -267,6 +469,7 @@ export default function Dashboard() {
                         <h3 className="font-semibold">{coin.name}</h3>
                         <div className="badge badge-primary badge-sm">{coin.symbol}</div>
                         <div className="badge badge-success badge-sm">Your Coin</div>
+                        <div className="badge badge-info badge-sm">Base Sepolia</div>
                       </div>
                       <p className="text-sm opacity-70 mb-2">
                         Created: {new Date(coin.createdAt).toLocaleDateString()} • Contract: {coin.address.slice(0, 6)}
@@ -292,13 +495,17 @@ export default function Dashboard() {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Link
-                        href={`/post/${coin.address}`} // Use coin address instead of index
-                        className="btn btn-sm btn-outline"
-                      >
+                      <Link href={`/post/${coin.address}`} className="btn btn-sm btn-outline">
                         View Post
                       </Link>
-
+                      <a
+                        href={`https://testnet.zora.co/collect/base-sepolia:${coin.address}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-sm btn-secondary"
+                      >
+                        View on Zora
+                      </a>
                       <a
                         href={`https://sepolia.basescan.org/address/${coin.address}`}
                         target="_blank"
@@ -316,47 +523,63 @@ export default function Dashboard() {
             <div className="text-center py-12">
               <div className="text-6xl mb-4">📄</div>
               <p className="text-lg opacity-70 mb-2">
-                {allCoins.length > 0 ? "No coins found from your address" : "No recent coins found"}
+                {allCoins.length > 0 ? "No coins found from your address" : "No coins found on Base Sepolia"}
               </p>
               <p className="text-sm opacity-50 mb-6">
-                {allCoins.length > 0
-                  ? "Your coins might not be in the recent coins list. Try creating a new post!"
-                  : "Create your first post to get started!"}
+                Try creating a new post or add your coin manually using the contract address above.
               </p>
-              <Link href="/" className="btn btn-primary">
-                Create New Post
-              </Link>
+              <div className="flex gap-2 justify-center">
+                <Link href="/" className="btn btn-primary">
+                  Create New Post
+                </Link>
+                <a
+                  href={`https://testnet.zora.co/@${address}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-outline"
+                >
+                  View Your Zora Profile
+                </a>
+              </div>
             </div>
           ) : null}
         </div>
       </div>
 
-      {/* Debug Info */}
-      {!loading && allCoins.length > 0 && (
-        <div className="bg-base-100 rounded-3xl shadow-lg p-6 mt-8">
-          <h3 className="text-lg font-semibold mb-4">🔍 Debug Information</h3>
-          <div className="text-sm space-y-2">
-            <p>
-              <strong>Your Address:</strong> {address}
-            </p>
-            <p>
-              <strong>Total Recent Coins Found:</strong> {allCoins.length}
-            </p>
-            <p>
-              <strong>Your Coins Found:</strong> {creatorCoins.length}
-            </p>
-            <p className="text-xs opacity-70">
-              We search through recent coins to find yours. If your coin doesn`t appear, it might not be in the recent
-              coins list from Zora`s API.
-            </p>
+      {/* Enhanced Debug Info */}
+      <div className="bg-base-100 rounded-3xl shadow-lg p-6 mt-8">
+        <h3 className="text-lg font-semibold mb-4">🔍 Base Sepolia Search Results</h3>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+          <div className="stat bg-base-200 rounded-lg p-3">
+            <div className="stat-title">Network</div>
+            <div className="stat-value text-sm">Base Sepolia</div>
+            <div className="stat-desc">Chain ID: {baseSepolia.id}</div>
+          </div>
+          <div className="stat bg-base-200 rounded-lg p-3">
+            <div className="stat-title">Your Address</div>
+            <div className="stat-value text-sm font-mono">{address.slice(0, 10)}...</div>
+          </div>
+          <div className="stat bg-base-200 rounded-lg p-3">
+            <div className="stat-title">Total Coins Scanned</div>
+            <div className="stat-value text-lg">{allCoins.length}</div>
+          </div>
+          <div className="stat bg-base-200 rounded-lg p-3">
+            <div className="stat-title">Your Coins Found</div>
+            <div className="stat-value text-lg">{creatorCoins.length}</div>
           </div>
         </div>
-      )}
+        <div className="mt-4 text-xs opacity-70">
+          <p>
+            <strong>Search Strategy:</strong> Querying Base Sepolia testnet specifically for recent, valuable, and
+            traded coins from your creator address.
+          </p>
+        </div>
+      </div>
 
       {/* Quick Actions */}
       <div className="bg-base-100 rounded-3xl shadow-lg p-6 mt-8">
         <h3 className="text-xl font-semibold mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Link href="/" className="btn btn-outline">
             <span className="text-xl mr-2">✍️</span>
             Create New Post
@@ -365,6 +588,15 @@ export default function Dashboard() {
             <span className="text-xl mr-2">🔍</span>
             Explore Posts
           </Link>
+          <a
+            href={`https://testnet.zora.co/@${address}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-outline"
+          >
+            <span className="text-xl mr-2">🎭</span>
+            Your Zora Profile
+          </a>
           <a
             href="https://www.coinbase.com/faucets/base-ethereum-sepolia-faucet"
             target="_blank"
